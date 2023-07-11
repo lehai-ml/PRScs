@@ -4,25 +4,29 @@ Download the git repository.
 
 1) Open the perform_PRScs.sh
 2) Define the path to the necessary files. 
-- LD panel downloaded from the github repo. e.g., ldblk_1kg_eur
-- summary_stat: The raw or filtered summary stat. The columns are not yet in the PRScs format.
-- preprocessed_summary_stat.txt : This is the summary statistics where the columns are placed in the correct order according to PRScs format and it must be tab delimited. The column names must be placed in following order -SNP, A1, A2, BETA (or OR), P.
-- target_bim : the prefix of individual bfiles - e.g., euro_batch2_genotyped
-- output_folder and output_prefix
+- LD panel downloaded from the github repo. e.g., `ldblk_1kg_eur`
+- `summary_stat`: The raw or filtered summary stat. The columns are not yet in the PRScs format.
+- `preprocessed_summary_stat.txt` : This is the summary statistics where the columns are placed in the correct order according to PRScs format and it must be tab delimited. The column names must be placed in following order -SNP, A1, A2, BETA (or OR), P.
+- `target_bim` : the prefix of individual bfiles - e.g., euro_batch2_genotyped
+- `output_folder` and `output_prefix`
 
-To add in or to remove the variable just comment out the lines.
-3) OPTIONAL STEP: If preprocessed_summary_stat.txt is not yet created. Run the function return_columns as follows:
-    return_columns raw_summary_stat preprocessed_summary_stat [ columns ]
-where columns are positions of the columns in raw_summary_stat corresponding to columns of SNP A1 A2 BETA(or OR) or P. !NOTE: only those columns are needed.
+*To add or to remove the variable just comment out the lines with #.*
+
+3) **OPTIONAL STEP**: If preprocessed_summary_stat.txt is not yet created. Run the function return_columns as follows:
+
+`return_columns raw_summary_stat preprocessed_summary_stat [ columns ]`
+
+where columns are positions of the columns in raw_summary_stat corresponding to columns of **SNP A1 A2 BETA(or OR) P**. 
+**NOTE: only those columns are needed.**
 
 for example:
-in raw_summary_stat I have the following columns: CHR SNP BP A1 A2 INFO OR SE P
+in `raw_summary_stat` I have the following columns: CHR SNP BP A1 A2 INFO OR SE P
 
 my command `return_columns raw_summary_stat preprocessed_summary_stat 2 4 5 7 9` will print those columns into a new files. 
 
-Your preprocessed_summary_stats must have the column names as first row. Your SNP column can be either rsid or CHR:BP format.
+Your `preprocessed_summary_stats` **must** have the column names as first row. Your SNP column can be in either rsid or CHR:BP format.
 
-4) run the command `python PRScs.py --ref_dir=$ld_file --bim_prefix=$target_bim --sst_file=$output_folder/$preprocessed_summary_stat --n_gwas=55420 --out_dir=$output_folder/$output_prefix.
+4) run the command `python PRScs.py --ref_dir=$ld_file --bim_prefix=$target_bim --sst_file=$output_folder/$preprocessed_summary_stat --n_gwas=55420 --out_dir=$output_folder/$output_prefix`.
 
 NOTE: the following lines have been added to the original parse_genet files: https://github.com/lehai-ml/PRScs/commit/4fdaf03cca32588a8d81f6fce656aa00f8a3aa70
 
