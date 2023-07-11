@@ -17,6 +17,7 @@ output_folder=asd_spark
 output_prefix=ASD_Spark
 #output_folder=asd
 #output_prefix=ASD
+
 #the PRScs.py requires the SNPs in the reference (1000G) and the other two files to match. 
 #So need to map chr:bp to rsid in all of your files.
 #your summary statistics header must be in the following format. SNP A1 A2 BETA(or OR) P
@@ -59,7 +60,7 @@ fi
 # --n_gwas=55420 \
 # --out_dir=$output_folder/$output_prefix
 #
-#Concatenate all files to one and convert to similar SNP id as in bim file
+#Concatenate all files to one file
 #cat $output_folder/${output_prefix}_pst_eff_a1*.txt > $output_folder/$output_prefix"_all.txt"
 
 #awk '{print $1"\t"$1":"$3"\t"$3"\t"$4"\t"$5"\t"$6}' $output_folder/$output_prefix"_all.txt" > $output_folder/$output_prefix"_preprocessed.txt"
