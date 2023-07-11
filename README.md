@@ -1,3 +1,10 @@
+# How to use
+
+Download the git repository.
+
+Make sure the following files are present:
+
+
 # PRS-CS
 
 **PRS-CS** is a Python based command line tool that infers posterior SNP effect sizes under continuous shrinkage (CS) priors

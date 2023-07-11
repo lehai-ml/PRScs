@@ -16,7 +16,7 @@ import h5py
 def parse_ref(ref_file, chrom):
     print('... parse reference file: %s ...' % ref_file)
 
-    ref_dict = {'CHR':[], 'SNP':[], 'BP':[], 'A1':[], 'A2':[], 'MAF':[]}
+    ref_dict = {'CHR':[], 'SNP':[], 'BP':[], 'A1':[], 'A2':[], 'MAF':[],'CHR/BP':[]}
     with open(ref_file) as ff:
         header = next(ff)
         for line in ff:
@@ -28,6 +28,7 @@ def parse_ref(ref_file, chrom):
                 ref_dict['A1'].append(ll[3])
                 ref_dict['A2'].append(ll[4])
                 ref_dict['MAF'].append(float(ll[5]))
+                ref_dict['CHR/BP'].append(f"{chrom}:{ll[2]}")
 
     print('... %d SNPs on chromosome %d read from %s ...' % (len(ref_dict['SNP']), chrom, ref_file))
     return ref_dict
@@ -65,27 +66,39 @@ def parse_sumstats(ref_dict, vld_dict, sst_file, n_subj):
 
     print('... %d SNPs read from %s ...' % (len(sst_dict['SNP']), sst_file))
 
-
     mapping = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
 
     vld_snp = set(zip(vld_dict['SNP'], vld_dict['A1'], vld_dict['A2']))
 
-    ref_snp = set(zip(ref_dict['SNP'], ref_dict['A1'], ref_dict['A2'])) | set(zip(ref_dict['SNP'], ref_dict['A2'], ref_dict['A1'])) | \
-              set(zip(ref_dict['SNP'], [mapping[aa] for aa in ref_dict['A1']], [mapping[aa] for aa in ref_dict['A2']])) | \
-              set(zip(ref_dict['SNP'], [mapping[aa] for aa in ref_dict['A2']], [mapping[aa] for aa in ref_dict['A1']]))
-    
     sst_snp = set(zip(sst_dict['SNP'], sst_dict['A1'], sst_dict['A2'])) | set(zip(sst_dict['SNP'], sst_dict['A2'], sst_dict['A1'])) | \
               set(zip(sst_dict['SNP'], [mapping[aa] for aa in sst_dict['A1']], [mapping[aa] for aa in sst_dict['A2']])) | \
               set(zip(sst_dict['SNP'], [mapping[aa] for aa in sst_dict['A2']], [mapping[aa] for aa in sst_dict['A1']]))
 
-    comm_snp = vld_snp & ref_snp & sst_snp
+    if 'rs' not in vld_dict['SNP'][0] or 'rs' not in sst_dict['SNP'][0]:
+        print('...the target bim or summary stat file does not have rsid...')
+        print('...matching snp based on chr:bp instead...') 
 
+        ref_snp = set(zip(ref_dict['CHR/BP'], ref_dict['A1'], ref_dict['A2'])) | set(zip(ref_dict['CHR/BP'], ref_dict['A2'], ref_dict['A1'])) | \
+              set(zip(ref_dict['CHR/BP'], [mapping[aa] for aa in ref_dict['A1']], [mapping[aa] for aa in ref_dict['A2']])) | \
+              set(zip(ref_dict['CHR/BP'], [mapping[aa] for aa in ref_dict['A2']], [mapping[aa] for aa in ref_dict['A1']]))
+
+    else:
+        ref_snp = set(zip(ref_dict['SNP'], ref_dict['A1'], ref_dict['A2'])) | set(zip(ref_dict['SNP'], ref_dict['A2'], ref_dict['A1'])) | \
+              set(zip(ref_dict['SNP'], [mapping[aa] for aa in ref_dict['A1']], [mapping[aa] for aa in ref_dict['A2']])) | \
+              set(zip(ref_dict['SNP'], [mapping[aa] for aa in ref_dict['A2']], [mapping[aa] for aa in ref_dict['A1']]))
+    
+    
+    comm_snp = vld_snp & ref_snp & sst_snp
+    
     print('... %d common SNPs in the reference, sumstats, and validation set ...' % len(comm_snp))
 
 
     n_sqrt = sp.sqrt(n_subj)
     sst_eff = {}
     with open(sst_file) as ff:
+        #beta = column 3
+        #p = column 4
+        
         header = (next(ff).strip()).split()
         header = [col.upper() for col in header]
         for line in ff:
@@ -112,7 +125,14 @@ def parse_sumstats(ref_dict, vld_dict, sst_file, n_subj):
                 beta_std = -1*sp.sign(beta)*abs(norm.ppf(p/2.0))/n_sqrt
                 sst_eff.update({snp: beta_std})
 
-
+    # check that the same SNP id is used.
+    chrbp_to_rs_dict = {chrbp:snp for chrbp,snp in zip(ref_dict['CHR/BP'],ref_dict['SNP'])}
+    rs_to_chrbp_dict = {snp:chrbp for snp,chrbp in zip(ref_dict['SNP'],ref_dict['CHR/BP'])}
+    if 'rs' not in sst_dict['SNP'][0]:
+        print('...matching the chr:bp to rsid based on reference file...')
+        # change it to rsid
+        sst_eff = {chrbp_to_rs_dict[k]:v for k,v in sst_eff.items()}
+        
     sst_dict = {'CHR':[], 'SNP':[], 'BP':[], 'A1':[], 'A2':[], 'MAF':[], 'BETA':[], 'FLP':[]}
     for (ii, snp) in enumerate(ref_dict['SNP']):
         if snp in sst_eff:
@@ -122,22 +142,22 @@ def parse_sumstats(ref_dict, vld_dict, sst_file, n_subj):
             sst_dict['BETA'].append(sst_eff[snp])
 
             a1 = ref_dict['A1'][ii]; a2 = ref_dict['A2'][ii]
-            if (snp, a1, a2) in comm_snp:
+            if (rs_to_chrbp_dict[snp], a1, a2) in comm_snp:
                 sst_dict['A1'].append(a1)
                 sst_dict['A2'].append(a2)
                 sst_dict['MAF'].append(ref_dict['MAF'][ii])
                 sst_dict['FLP'].append(1)
-            elif (snp, a2, a1) in comm_snp:
+            elif (rs_to_chrbp_dict[snp], a2, a1) in comm_snp:
                 sst_dict['A1'].append(a2)
                 sst_dict['A2'].append(a1)
                 sst_dict['MAF'].append(1-ref_dict['MAF'][ii])
                 sst_dict['FLP'].append(-1)
-            elif (snp, mapping[a1], mapping[a2]) in comm_snp:
+            elif (rs_to_chrbp_dict[snp], mapping[a1], mapping[a2]) in comm_snp:
                 sst_dict['A1'].append(mapping[a1])
                 sst_dict['A2'].append(mapping[a2])
                 sst_dict['MAF'].append(ref_dict['MAF'][ii])
                 sst_dict['FLP'].append(1)
-            elif (snp, mapping[a2], mapping[a1]) in comm_snp:
+            elif (rs_to_chrbp_dict[snp], mapping[a2], mapping[a1]) in comm_snp:
                 sst_dict['A1'].append(mapping[a2])
                 sst_dict['A2'].append(mapping[a1])
                 sst_dict['MAF'].append(1-ref_dict['MAF'][ii])
