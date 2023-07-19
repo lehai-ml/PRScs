@@ -28,7 +28,8 @@ def parse_ref(ref_file, chrom):
                 ref_dict['A1'].append(ll[3])
                 ref_dict['A2'].append(ll[4])
                 ref_dict['MAF'].append(float(ll[5]))
-                ref_dict['CHR/BP'].append(f"{chrom}:{ll[2]}")
+                #ref_dict['CHR/BP'].append(f"{chrom}:{ll[2]}")
+                ref_dict['CHR/BP'].append(str(chrom)+':'+str(ll[2]))
 
     print('... %d SNPs on chromosome %d read from %s ...' % (len(ref_dict['SNP']), chrom, ref_file))
     return ref_dict
