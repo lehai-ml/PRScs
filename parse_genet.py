@@ -10,6 +10,7 @@ import os
 import scipy as sp
 from scipy.stats import norm
 from scipy import linalg
+import pickle
 import h5py
 
 
@@ -133,7 +134,6 @@ def parse_sumstats(ref_dict, vld_dict, sst_file, n_subj):
         print('...matching the chr:bp to rsid based on reference file...')
         # change it to rsid
         sst_eff = {chrbp_to_rs_dict[k]:v for k,v in sst_eff.items()}
-        
     sst_dict = {'CHR':[], 'SNP':[], 'BP':[], 'A1':[], 'A2':[], 'MAF':[], 'BETA':[], 'FLP':[]}
     for (ii, snp) in enumerate(ref_dict['SNP']):
         if snp in sst_eff:
